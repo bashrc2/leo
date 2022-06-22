@@ -242,7 +242,8 @@ class Browser:
                 if not in_pf_block:
                     quote = line[1:].strip()
                     if not quote.startswith('-') and \
-                       not quote.startswith('—'):
+                       not quote.startswith('—') and \
+                       not quote.startswith('→'):
                         quote = f"“{quote}”"
                     else:
                         quote = f"\n    {quote}"

@@ -241,9 +241,12 @@ class Browser:
                 # quote
                 if not in_pf_block:
                     quote = line[1:].strip()
+                    if not quote.startswith('-') and \
+                       not quote.startswith('—'):
+                        quote = f"“{quote}”"
                     line = \
                         f"{hlt['italic']}{hlt['bold']}{hlt['quote_color']}" + \
-                        f"  “{quote}”{hlt['reset']}"
+                        f"  {quote}{hlt['reset']}"
                     final += fmt(line, cols)
                     appended = True
             if (line.startswith("    ") and not line.startswith("     ")) or \

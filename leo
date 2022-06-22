@@ -205,7 +205,7 @@ class Browser:
 
     def _get_render_body(self, file: []) -> []:
         cols, _ = os.get_terminal_size()
-        if (self.wrap_text and self.wrap_width):
+        if self.wrap_text and self.wrap_width:
             cols = min(cols, self.wrap_width)
         final = []
         is_toggle_line = \
@@ -244,7 +244,7 @@ class Browser:
                     line = \
                         f"{hlt['italic']}{hlt['bold']}{hlt['quote_color']}" + \
                         f"  “{quote}”{hlt['reset']}"
-                    final.append(line)
+                    final += fmt(line, cols)
                     appended = True
             if (line.startswith("    ") and not line.startswith("     ")) or \
                (line.startswith("  ") and not line.startswith("   ")):

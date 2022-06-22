@@ -275,7 +275,9 @@ class Browser:
                     if not quote.startswith('-') and \
                        not quote.startswith('—') and \
                        not quote.startswith('→'):
-                        quote = f"“{quote}”"
+                        if not quote.startswith("'") and \
+                           not quote.startswith('"'):
+                            quote = f"“{quote}”"
                     else:
                         quote = f"\n    {quote}"
                     line = \

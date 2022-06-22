@@ -244,6 +244,8 @@ class Browser:
                     if not quote.startswith('-') and \
                        not quote.startswith('—'):
                         quote = f"“{quote}”"
+                    else:
+                        quote = f"\n    {quote}"
                     line = \
                         f"{hlt['italic']}{hlt['bold']}{hlt['quote_color']}" + \
                         f"  {quote}{hlt['reset']}"

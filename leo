@@ -91,9 +91,16 @@ class Browser:
         except BaseException:
             resolved = False
         if not resolved and ':1965' in url:
+            resolved = True
             url = url.replace(':1965', '')
             hostname = get_hostname(url)
-            self.sock = socket.create_connection((hostname, port))
+            try:
+                self.sock = socket.create_connection((hostname, port))
+            except BaseException:
+                resolved = False
+        if not resolved:
+            log_info("Unable to resolve", url)
+            return {}
         self.ssock = self.context.wrap_socket(
             self.sock, server_hostname=hostname
         )

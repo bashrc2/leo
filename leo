@@ -13,6 +13,7 @@ import ssl
 import sys
 import typing
 import urllib.parse
+from pathlib import Path
 
 DEFAULT_CONFIG = {
     "wrap_text": False,
@@ -134,12 +135,24 @@ class Browser:
                         if url.endswith('.' + ext):
                             detected_media_ext = ext
                             break
-                detected_torrent_ext = ''
+                detected_archive_ext = ''
                 if not detected_image_ext and not detected_media_ext:
+                    archive_extensions = (
+                        'tar.gz', 'zip', 'tgz', 'xz'
+                    )
+                    for ext in archive_extensions:
+                        if url.endswith('.' + ext):
+                            detected_archive_ext = ext
+                            break
+                detected_torrent_ext = ''
+                if not detected_image_ext and \
+                   not detected_media_ext and \
+                   not detected_archive_ext:
                     if url.endswith('.torrent'):
                         detected_torrent_ext = 'torrent'
                 if not detected_image_ext and \
                    not detected_media_ext and \
+                   not detected_archive_ext and \
                    not detected_torrent_ext:
                     try:
                         response_body = response_body.decode(charset)
@@ -194,6 +207,17 @@ class Browser:
                             os.remove(torrent_filename)
                         except BaseException:
                             pass
+                elif detected_archive_ext:
+                    # save archive to Downloads
+                    home_dir = str(Path.home())
+                    archive_name = url.split('/')[-1]
+                    archive_filename = archive_name
+                    if os.path.isdir(f"{home_dir}/Downloads"):
+                        archive_filename = \
+                            f"{home_dir}/Downloads/{archive_name}"
+                    with open(archive_filename, 'wb') as fp_archive:
+                        fp_archive.write(response_body)
+                    log_info("Archive downloaded to", archive_filename)
                 if not decoded:
                     return {}
             fp_doc.close()

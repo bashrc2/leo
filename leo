@@ -374,9 +374,11 @@ class Browser:
 
     def navigate(self, url: str) -> None:
         self.history.append(url)
+        prev_links = self.current_links.copy()
         self.current_links = []
         resp = self._get_gemini_document(url)
         if not resp:
+            del self.history[-1]
             return
 
         status = resp["status"]
@@ -422,6 +424,8 @@ class Browser:
             self.navigate(rurl["final"])
 
         elif status.startswith("4") or status.startswith("5"):
+            del self.history[-1]
+            self.current_links = prev_links
             log_error("Server returned code 4x/5x " +
                       "(TEMPORARY/PERMANENT FAILURE), info:", meta)
 

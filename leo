@@ -78,12 +78,14 @@ class Browser:
         if os.path.isfile(self.cert_path):
             self.enable_cert()
 
-    def _get_gemini_document(self, url: str, port: int = GEMINI_PORT) -> {}:
+    def _get_gemini_document(self, url: str, verbose: bool = True,
+                             port: int = GEMINI_PORT) -> {}:
         """
         Gets a document via the Gemini protocol.
         """
         self.current_url = url
-        log_info("attempting to get", url)
+        if verbose:
+            log_info("attempting to get", url)
         resolved = True
         hostname = get_hostname(url)
         try:
@@ -104,7 +106,8 @@ class Browser:
         self.ssock = self.context.wrap_socket(
             self.sock, server_hostname=hostname
         )
-        log_info("Connected to", hostname, "over", self.ssock.version())
+        if verbose:
+            log_info("Connected to", hostname, "over", self.ssock.version())
         self.current_host = hostname
         set_term_title(hostname)
 
@@ -374,11 +377,11 @@ class Browser:
         lines = self._get_render_body(file)
         self._page(lines)
 
-    def navigate(self, url: str) -> None:
+    def navigate(self, url: str, verbose: bool = True) -> None:
         self.history.append(url)
         prev_links = self.current_links.copy()
         self.current_links = []
-        resp = self._get_gemini_document(url)
+        resp = self._get_gemini_document(url, verbose)
         if not resp:
             del self.history[-1]
             return
@@ -395,7 +398,7 @@ class Browser:
             # remove trailing /
             _url = url if url[-1] != '/' else url[:len(url) - 1]
             result = _url + "?" + get_1x_input(status, meta)
-            self.navigate(result)
+            self.navigate(result, verbose)
 
         elif status.startswith("2"):
             self.last_load_was_redirect = False
@@ -403,7 +406,8 @@ class Browser:
             self._render(resp["body"])
 
         elif status.startswith("3"):
-            log_info("redirected to", meta)
+            if verbose:
+                log_info("redirected to", meta)
 
             if self.redirect_count > 5:
                 log_info("Redirect cycle detected.")
@@ -423,7 +427,7 @@ class Browser:
                 log_info("Site attempted to redirect us to a " +
                          "non-gemini protocol. Stopping.")
                 return
-            self.navigate(rurl["final"])
+            self.navigate(rurl["final"], verbose)
 
         elif status.startswith("4") or status.startswith("5"):
             del self.history[-1]
@@ -827,6 +831,7 @@ def handle_args(args) -> None:
 if __name__ == "__main__":
     URL = ""
     OLD_URL = ""
+    FETCH = False
 
     parser = \
         argparse.ArgumentParser(prog='leo',
@@ -834,6 +839,8 @@ if __name__ == "__main__":
     parser.add_argument("--url", required=False, type=str,
                         help='Initial URL to navigate to. If left blank ' +
                         'and no homepage is set, you will be prompted.')
+    parser.add_argument("--fetch", required=False, type=str,
+                        help='URL to be fetched.')
     parser.add_argument("--config", required=False, type=str,
                         help='Temporary config file location. If left ' +
                         'blank, leo will load the default config.')
@@ -863,8 +870,9 @@ if __name__ == "__main__":
                 os.path.join(get_config_path(), "config.json")
             log_info(f"Loaded config from {config_file_location}")
         else:
-            log_error("Config not found: falling back to defaults.")
-            DEFAULTS = True
+            if not args.fetch:
+                log_error("Config not found: falling back to defaults.")
+                DEFAULTS = True
 
     browser = Browser(config)
 
@@ -912,6 +920,11 @@ if __name__ == "__main__":
     if args.url:
         # always takes precedence over config file
         URL = args.url
+
+    if args.fetch:
+        # always takes precedence over config file
+        URL = args.fetch
+        FETCH = True
 
     FIRST = False
     if URL != "":
@@ -962,6 +975,9 @@ if __name__ == "__main__":
                 log_error("Command not found")
 
         if _TYPE in (0, 1) and URL is not None:
-            browser.navigate(URL)
+            browser.navigate(URL, not FETCH)
+            # if this is a fetch then exit after the page has downloaded
+            if FETCH:
+                break
         elif _TYPE == 0 and URL is None:
             log_error("Invalid url specifed.")

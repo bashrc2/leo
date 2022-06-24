@@ -384,6 +384,7 @@ class Browser:
         resp = self._get_gemini_document(url, verbose)
         if not resp:
             del self.history[-1]
+            self.current_links = prev_links
             return
 
         status = resp["status"]
